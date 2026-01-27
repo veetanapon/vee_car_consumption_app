@@ -1,5 +1,5 @@
 // GAS_URL should be injected server-side or via build step
-const GAS_URL = 'https://script.google.com/macros/s/AKfycbxKgK2CTZRGTBPzOX4R8PexlXhwNtFS0VacHLGOMFUUeEQ52fa-k0mbcvmrM-eAj_XA/exec';
+//const GAS_URL = 'https://script.google.com/macros/s/AKfycbxKgK2CTZRGTBPzOX4R8PexlXhwNtFS0VacHLGOMFUUeEQ52fa-k0mbcvmrM-eAj_XA/exec';
 const USER_ID = 'demo_user';
 
 async function loadCars() {
@@ -40,9 +40,9 @@ async function loadCars() {
 
 
 async function loadNotifications() {
-const res = await fetch(`${GAS_URL}?action=notifications&uid=${USER_ID}`);
-const json = await res.json();
-alert(json.notifications.map(n => n[4] + '\n' + n[5]).join('\n\n'));
+  const res = await fetch(`${GAS_URL}?action=notifications&uid=${USER_ID}`);
+  const json = await res.json();
+  alert(json.notifications.map(n => n[4] + '\n' + n[5]).join('\n\n'));
 }
 
 
