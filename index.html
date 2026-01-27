@@ -1,41 +1,22 @@
 <!DOCTYPE html>
-<html>
-
+<html lang="th">
 <head>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>My Car Energy</title>
-    <link rel="stylesheet" href="css/style.css">
-    <style>
-    </style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vee Car Consumption</title>
+  <link rel="stylesheet" href="css/style.css" />
 </head>
-
 <body>
-    <header>
-        My Cars
-        <div class="bell">🔔<span id="badge" class="badge" style="display:none"></span></div>
-    </header>
-    <div id="cars"></div>
-    <div class="add">+</div>
 
+<header>
+  <h1>🚗 รถของฉัน</h1>
+  <div class="noti" onclick="loadNotifications()">🔔<div id="badge" class="badge" style="display:none">0</div></div>
+</header>
 
-    <script>
-        fetch('?action=home').then(r => r.json()).then(render);
+<main id="carList"></main>
 
-        function render(list) {
-            const c = document.getElementById('cars');
-            list.forEach(v => {
-                const div = document.createElement('div');
-                div.className = 'card';
-                div.innerHTML = `
-<img class="car-img" src="${v.image_url || 'https://via.placeholder.com/300x160'}">
-<div class="car-name">${v.name}</div>
-<div class="meta">ไมล์ล่าสุด: ${v.last_odometer || 0} km</div>
-<div class="meta">ค่าใช้จ่ายรวม: ${v.total_cost || 0} บาท</div>
-`;
-                c.appendChild(div);
-            });
-        }
-    </script>
+<button class="add-btn">+</button>
+
+<script src="js/app.js"></script>
 </body>
-
 </html>
