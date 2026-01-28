@@ -1,9 +1,11 @@
 // GAS_URL should be injected server-side or via build step
-//const GAS_URL = 'https://script.google.com/macros/s/AKfycbxKgK2CTZRGTBPzOX4R8PexlXhwNtFS0VacHLGOMFUUeEQ52fa-k0mbcvmrM-eAj_XA/exec';
-const USER_ID = 'demo_user';
+const GAS_URL = 'https://script.google.com/macros/s/AKfycbw3sEklBDVKlGeH0ZR5ouEfBRzHSZkD5jx3-AJMmWUUC9hphn4TpkcIB7J27hkTFUI1/exec';
+//const GAS_URL = 'https://script.google.com/macros/s/AKfycbxQfcGp5gOwRJAZwHSnqLs3HZ4Im_grEqzzrHvHZ_E/dev';
+//const USER_ID = 'demo_user';
+const USER_ID = localStorage.getItem('uid');
 
 async function loadCars() {
-  const res = await fetch(`${GAS_URL}?action=vehicles`);
+  const res = await fetch(`${GAS_URL}?action=vehicles&uid=${USER_ID}`);//.then(r => r.json());
   const json = await res.json();
   const list = document.getElementById('carList');
   list.innerHTML = '';
@@ -13,27 +15,26 @@ async function loadCars() {
     const vid = v[0];
     const sum = await fetch(`${GAS_URL}?action=vehicle_summary&vid=${vid}`).then(r => r.json());
 
-
     const img = v[6]
-    ? `https://drive.google.com/uc?id=${v[6]}`
-    : 'https://via.placeholder.com/400x200?text=No+Image';
+      ? `https://drive.google.com/uc?id=${v[6]}`
+      : 'https://via.placeholder.com/400x200?text=No+Image';
 
 
     list.innerHTML += `
-    <div class="car-card">
-    <img src="${img}" />
-    <div class="car-name">${v[2]}</div>
-    <div class="stats">
-    <div class="stat">
-    <span>เลขไมล์ล่าสุด</span>
-    <strong>${sum.summary.last_odometer} km</strong>
-    </div>
-    <div class="stat">
-    <span>ค่าใช้จ่ายรวม</span>
-    <strong>฿${sum.summary.total_cost}</strong>
-    </div>
-    </div>
-    </div>
+      <div class="car-card">
+        <img src="${img}" />
+        <div class="car-name">${v[2]}</div>
+        <div class="stats">
+          <div class="stat">
+            <span>เลขไมล์ล่าสุด</span>
+            <strong>${sum.summary.last_odometer} km</strong>
+          </div>
+          <div class="stat">
+            <span>ค่าใช้จ่ายรวม</span>
+            <strong>฿${sum.summary.total_cost}</strong>
+          </div>
+        </div>
+      </div>
     `;
   }
 }
