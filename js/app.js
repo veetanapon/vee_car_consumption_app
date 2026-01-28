@@ -42,4 +42,9 @@ async function loadNotifications() {
 }
 
 
-loadCars();
+(async () => {
+  const ok = await ensureAuth();
+  if (!ok) return;
+
+  loadCars();
+})();
