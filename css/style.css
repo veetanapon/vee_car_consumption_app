@@ -1,102 +1,341 @@
-body {
+/* =========================
+   THEME VARIABLES
+========================= */
+
+/* 🌤 Light */
+:root {
+  --bg-app: #f2f3f5;
+  --bg-card: #ffffff;
+  --bg-soft: #f4f5f7;
+  --text-main: #111827;
+  --text-sub: #6b7280;
+  --border-soft: #e5e7eb;
+  --primary: #14b8a6;
+  --primary-dark: #0ea5a4;
+  --danger: #ff3b30;
+  --shadow-sm: 0 2px 6px rgba(0,0,0,.06);
+}
+
+/* 🌙 Dark */
+.theme-dark {
+  --bg-app: #0f172a;
+  --bg-card: #111827;
+  --bg-soft: #1f2933;
+  --text-main: #e5e7eb;
+  --text-sub: #9ca3af;
+  --border-soft: #1f2937;
+  --primary: #22d3ee;
+  --primary-dark: #06b6d4;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,.5);
+}
+
+/* =========================
+   BASE STYLES
+========================= */
+* {
+  box-sizing: border-box;
+}
+
+html, body {
   margin: 0;
+  padding: 0;
+  background: var(--bg-app);
+  color: var(--text-main);
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-  background: #f5f5f7;
-  color: #111;
 }
-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 16px;
-  background: #fff;
-  box-shadow: 0 1px 4px rgba(0,0,0,.08);
-  position: sticky;
-  top: 0;
-  z-index: 10;
-}
-header h1 {
-  font-size: 18px;
-  margin: 0;
-}
-.noti {
-  position: relative;
-  font-size: 22px;
-  cursor: pointer;
-}
-.badge {
-  position: absolute;
-  top: -4px;
-  right: -6px;
-  background: red;
-  color: #fff;
-  font-size: 12px;
-  border-radius: 10px;
-  padding: 2px 6px;
-}
-main {
-  padding: 16px;
-}
-.car-card {
-  width: 100%;
-  background: #fff;
-  border-radius: 20px;
-  overflow: hidden;
-  margin-bottom: 20px;
-  box-shadow: 0 8px 24px rgba(0,0,0,.08);
-}
-.car-card img {
-  width: 100%;
-  height: 200px;
-  object-fit: cover;
-}
-.car-name {
-  font-size: 20px;
-  font-weight: 700;
-}
-/* stats ให้ดูเหมือน iOS card */
-.stats {
-  display: flex;
-  justify-content: space-between;
-  padding: 12px 16px;
-}
-.stat {
-  flex: 1;
-  background: #f2f2f7;
-  border-radius: 14px;
-  padding: 10px;
-  text-align: center;
-}
-.stat span {
-  display: block;
-  font-size: 14px;
-  color: #666;
-}
-.stat strong {
-  font-size: 16px;
-}
-.add-btn {
-  position: fixed;
-  bottom: 20px;
-  right: 20px;
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: #007aff;
-  color: #fff;
-  font-size: 32px;
-  border: none;
-  box-shadow: 0 4px 12px rgba(0,0,0,.25);
-}
-/* container หลัก */
+
 .container {
-  max-width: 430px; /* iPhone Pro Max */
-  margin: auto;
+  width: 100%;
+  max-width: 440px;
+  margin: 0 auto;
   padding: 16px;
 }
 
-/* header + main อยู่ใน container */
-header, main {
-  max-width: 430px;
-  margin: 0 auto;
+header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background: color-mix(in srgb, var(--bg-card) 90%, transparent);
+  backdrop-filter: blur(12px);
+  padding: calc(14px + env(safe-area-inset-top)) 16px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-soft);
 }
+
+header h1 {
+  font-size: 18px;
+  font-weight: 700;
+  margin: 0;
+}
+
+.noti { position: relative; font-size: 22px; cursor: pointer; }
+.badge {
+  position: absolute;
+  top: -6px;
+  right: -8px;
+  background: var(--danger);
+  color: #fff;
+  font-size: 11px;
+  border-radius: 999px;
+  padding: 2px 6px;
+}
+
+main {
+  padding: 16px;
+  padding-bottom: calc(120px + env(safe-area-inset-bottom));
+}
+
+/* =========================
+   CAR CARD (COMPACT STYLE)
+========================= */
+.car-card.compact {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  border-radius: 16px;
+  padding: 10px 36px 10px 10px; /* ลด Padding และเว้นที่ให้ลูกศร › */
+  background: var(--bg-card);
+  cursor: pointer;
+  border: none; /* ป้องกันเส้นขอบโผล่ */
+}
+
+/* รูปรถ */
+.car-thumb {
+  width: 80px;
+  height: 50px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--bg-soft);
+  flex-shrink: 0;
+}
+
+.car-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.car-info {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ชื่อรถและรุ่นในบรรทัดเดียวกัน */
+.car-header-row {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-bottom: 6px;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.car-title {
+  font-size: 14px;
+  font-weight: 700;
+  text-overflow: ellipsis;
+  overflow: hidden;
+}
+
+.car-subtitle {
+  font-size: 11px;
+  color: var(--text-sub);
+  font-weight: 400;
+}
+
+/* แถวข้อมูล ODO และ Cost */
+.car-stats-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-top: 1px solid var(--border-soft);
+  padding-top: 4px;
+}
+
+.car-stat .label {
+  font-size: 10px;
+  color: var(--text-sub);
+  display: block;
+}
+
+.car-stat .value {
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.text-right { text-align: right; }
+
+/* ลูกศรบอกว่าคลิกได้ */
+.car-card.compact::after {
+  content: '›';
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-55%);
+  font-size: 18px;
+  color: var(--text-sub);
+  opacity: .35;
+  pointer-events: none;
+}
+
+/* =========================
+   SWIPE ACTIONS
+========================= */
+.swipe-wrap {
+  position: relative;
+  overflow: hidden;
+  border-radius: 16px;
+  background: var(--bg-card); /* พื้นหลังปุ่มจะเป็นสีเดียวกับ Card */
+  margin-bottom: 12px;
+  box-shadow: var(--shadow-sm);
+  will-change: transform, opacity;
+}
+
+.swipe-actions {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 128px;
+  display: flex;
+  z-index: 1;
+}
+
+.swipe-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  background: var(--bg-card); /* ใช้สีเดียวกับ Card เพื่อความเนียน */
+  transition: all 0.2s ease;
+}
+
+swipe-btn.edit { 
+  color: var(--text-sub); /* เริ่มต้นใช้สีเทา */
+}
+.swipe-btn.edit:hover {
+  color: #3b82f6; /* เปลี่ยนเป็นสีน้ำเงินเมื่อ Hover */
+}
+
+.swipe-btn.delete { 
+  color: var(--text-sub); /* เริ่มต้นใช้สีเทา */
+}
+.swipe-btn.delete:hover {
+  color: #ef4444; /* เปลี่ยนเป็นสีแดงเมื่อ Hover */
+}
+
+/* ปรับขนาด SVG ภายในปุ่ม */
+.swipe-btn svg {
+  opacity: 0.6; /* ให้ดูจางๆ Minimal */
+  transition: opacity 0.2s ease;
+}
+
+.swipe-btn:hover svg {
+  opacity: 1;
+}
+
+/* เส้นคั่นระหว่างปุ่มแบบบางมาก */
+.swipe-btn.edit {
+  border-right: 1px solid var(--border-soft);
+}
+
+.swipe-content {
+  position: relative;
+  z-index: 2;
+  background: var(--bg-card);
+  width: 100%;
+  border-radius: 0; 
+  transition: transform .25s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* =========================
+   UI ELEMENTS
+========================= */
+.fab {
+  position: fixed;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff; font-size: 34px; border: none; cursor: pointer;
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--primary) 40%, transparent), 0 4px 10px rgba(0,0,0,.25);
+  z-index: 50;
+}
+
+.fab:active { transform: scale(.94); }
+
+.sheet {
+  position: fixed; left: 0; right: 0; bottom: 0;
+  background: var(--bg-card);
+  border-radius: 24px 24px 0 0;
+  transform: translateY(100%);
+  transition: transform .3s ease;
+  box-shadow: 0 -12px 40px rgba(0,0,0,.18);
+  z-index: 100;
+}
+
+.sheet.show { transform: translateY(0); }
+
+.sheet-header {
+  padding: 16px; font-weight: 700;
+  display: flex; justify-content: space-between; align-items: center;
+  position: relative;
+}
+
+.sheet-header button {
+  background: none; border: none; font-size: 20px;
+  color: #9ca3af; cursor: pointer;
+}
+
+.sheet-body {
+  padding: 16px;
+  padding-bottom: calc(24px + env(safe-area-inset-bottom));
+}
+
+.sheet input, .sheet select {
+  width: 100%; padding: 12px 14px; border-radius: 14px;
+  border: 1px solid var(--border-soft); background: var(--bg-soft);
+  color: var(--text-main); margin-bottom: 12px; font-size: 15px;
+}
+
+.sheet-body button {
+  width: 100%; padding: 14px; border-radius: 16px; border: none;
+  background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+  color: #fff; font-size: 16px; font-weight: 600;
+}
+
+.hidden { display: none !important; }
+
+.image-preview {
+  width: 100%; max-height: 200px; object-fit: cover;
+  border-radius: 14px; margin-bottom: 12px;
+}
+
+/* =========================
+   SKELETON LOADER
+========================= */
+.skeleton {
+  animation: pulse 1.4s ease-in-out infinite;
+  background: linear-gradient(90deg, var(--bg-soft) 25%, var(--border-soft) 37%, var(--bg-soft) 63%);
+  background-size: 400% 100%;
+}
+
+@keyframes pulse {
+  0% { background-position: 100% 50%; }
+  100% { background-position: 0 50%; }
+}
+
+.car-card.skeleton-card {
+  display: flex; gap: 12px; padding: 10px; margin-bottom: 10px;
+  border-radius: 16px; background: var(--bg-card);
+}
+
+.skeleton-thumb { width: 56px; height: 50px; border-radius: 10px; }
+.skeleton-line { height: 12px; border-radius: 6px; margin-bottom: 8px; }
+.skeleton-line.short { width: 60%; }
+.skeleton-line.long { width: 90%; }

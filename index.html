@@ -9,13 +9,61 @@
 <body>
 
 <header class="container">
-  <h1>🚗 รถของฉัน</h1>
-  <div class="noti" onclick="loadNotifications()">🔔<div id="badge" class="badge" style="display:none">0</div></div>
+  <h1>My Cars</h1>
+  <div style="display:flex; gap:14px; align-items:center">
+    <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
+    <div class="noti" onclick="loadNotifications()">
+      🔔
+      <div id="badge" class="badge" style="display:none">0</div>
+    </div>
+  </div>
 </header>
 
 <main class="container" id="carList"></main>
 
-<button class="add-btn">+</button>
+<!-- Floating Add Button -->
+<button class="fab" onclick="openAddVehicle()">＋</button>
+
+<!-- Bottom Sheet -->
+<div id="addSheet" class="sheet hidden">
+  <div class="sheet-header">
+    <span>เพิ่มรถ</span>
+    <button onclick="closeAddVehicle()">&times;</button>
+  </div>
+
+  <div class="sheet-body">
+    <input id="v_name" placeholder="ชื่อรถ" />
+    <input id="v_brand" placeholder="ยี่ห้อ" />
+    <input id="v_model" placeholder="รุ่น" />
+
+    <select id="v_type">
+      <option value="fuel">⛽ น้ำมัน</option>
+      <option value="ev">⚡ EV</option>
+    </select>
+
+    <input id="v_odometer" type="number" placeholder="เลขไมล์เริ่มต้น" />
+
+    <!-- <label class="upload">
+      📷 เลือกรูป
+      <input type="file" id="v_image" accept="image/*" />
+      
+    </label> -->
+    <label class="upload">
+      📷 เลือกรูป
+      <input type="file" id="vehicleImage" accept="image/*" />
+    </label>
+
+    <img
+      id="imagePreview"
+      class="image-preview hidden"
+    />
+
+    <button onclick="submitVehicle()">บันทึก</button>
+  </div>
+</div>
+
+
+<!-- <button class="add-btn">+</button> -->
 
 <script src="js/config.js"></script>
 <script src="js/auth.js"></script>
