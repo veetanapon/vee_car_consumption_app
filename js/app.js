@@ -22,29 +22,33 @@ async function apiFetch(url, options = {}) {
 
 async function loadCars() {
   const list = document.getElementById('carList');
-  
-  // 1. โชว์ Skeleton ระหว่างรอ
+  if (!list) return;
+  // 1. โชว์ Skeleton
   if (list.innerHTML.trim() === "") renderSkeleton(3);
 
   // 2. ดึงข้อมูลครั้งเดียว (Single API Call)
   const json = await apiFetch(`${GAS_URL}?action=vehicles&uid=${USER_ID}`);
-  if (!json || !json.vehicles) return;
-
-  // 3. สร้าง HTML รวดเดียว
+  if (!json || !Array.isArray(json.vehicles)) {
+    list.innerHTML = '<p>ไม่พบข้อมูลรถ</p>';
+    return;
+  }
+  // 3. สร้าง HTML ของ Card ทั้งหมดในลูปเดียว
   let allCardsHTML = "";
-
   json.vehicles.forEach(v => {
     const img = v.imgId 
       ? `https://drive.google.com/thumbnail?id=${v.imgId}&sz=w400` 
       : 'https://via.placeholder.com/400x200?text=No+Image';
-    // ต่อสตริง HTML ไปเรื่อยๆ
+
+    const lastOdo = Number(v.summary?.last_odometer || 0);
+    const totalCost = Number(v.summary?.total_cost || 0);
+    
     allCardsHTML += `
       <div class="swipe-wrap" id="card-${v.vid}">
         <div class="swipe-actions">
           <div class="swipe-btn edit" onclick="editVehicle('${v.vid}')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
           </div>
-          <div class="swipe-btn delete" onclick="deleteVehicle('${v.vid}')">
+          <div class="swipe-btn delete" onclick="deleteVehicle(event, '${v.vid}')">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
           </div>
         </div>
@@ -58,11 +62,11 @@ async function loadCars() {
             <div class="car-stats-row">
               <div class="car-stat">
                 <span class="label">เลขไมล์ปัจจุบัน</span>
-                <span class="value">${v.summary.last_odometer.toLocaleString()} <small>km</small></span>
+                <span class="value">${lastOdo.toLocaleString()} <small>km</small></span>
               </div>
               <div class="car-stat text-right">
                 <span class="label">ค่าใช้จ่ายรวม</span>
-                <span class="value">${v.summary.total_cost.toLocaleString()} <small>฿</small></span>
+                <span class="value">${totalCost.toLocaleString()} <small>฿</small></span>
               </div>
             </div>
           </div>
@@ -70,7 +74,7 @@ async function loadCars() {
       </div>
     `;
   });
-  // 3. เมื่อลูปเสร็จ ข้อมูลพร้อมแล้ว ค่อยเปลี่ยนหน้าจอจาก Skeleton เป็น Card จริงรวดเดียว
+  
   list.innerHTML = allCardsHTML;
 }
 
@@ -122,7 +126,7 @@ async function submitVehicle(mode = 'add_vehicle') {
     return;
   }
 
-  const btn = document.querySelector('.sheet-body button');
+  const btn = document.querySelector('.sheet-body button:last-child');
   const originalText = btn.innerText;
   btn.innerText = "กำลังประมวลผล...";
   btn.disabled = true;
@@ -171,6 +175,9 @@ function toBase64(file) {
 /* ================= IMAGE ================= */
 function resizeImage(base64, maxW, maxH, cb) {
   const img = new Image();
+  img.onerror = () => {
+    alert('ไม่สามารถโหลดรูปภาพได้');
+  };
   img.onload = () => {
     let { width, height } = img;
 
@@ -191,23 +198,43 @@ function resizeImage(base64, maxW, maxH, cb) {
 }
 
 /* ================= IMAGE HANDLER (UPDATED) ================= */
-document.getElementById('vehicleImage').addEventListener('change', e => {
-  const file = e.target.files[0];
-  const preview = document.getElementById('imagePreview');
+const vehicleInput = document.getElementById('vehicleImage');
+if (vehicleInput) { // ตรวจสอบก่อนว่ามีไหม (ในหน้า vehicle.html จะไม่มี)
+    vehicleInput.addEventListener('change', e => {
+        const file = e.target.files[0];
+        const preview = document.getElementById('imagePreview');
+        if (!file) return;
 
-  if (!file) return;
-
-  const reader = new FileReader();
-  reader.onload = (event) => {
-    // ใช้ฟังก์ชัน resizeImage ที่คุณมีอยู่แล้ว เพื่อบีบอัดให้เหลือขนาดไม่เกิน 800px
-    resizeImage(event.target.result, 400, 300, (resizedBase64) => {
-      imageBase64 = resizedBase64;
-      preview.src = resizedBase64;
-      preview.classList.remove('hidden');
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            resizeImage(event.target.result, 400, 300, (resizedBase64) => {
+                imageBase64 = resizedBase64;
+                if(preview) {
+                    preview.src = resizedBase64;
+                    preview.classList.remove('hidden');
+                }
+            });
+        };
+        reader.readAsDataURL(file);
     });
-  };
-  reader.readAsDataURL(file);
-});
+}
+// document.getElementById('vehicleImage').addEventListener('change', e => {
+//   const file = e.target.files[0];
+//   const preview = document.getElementById('imagePreview');
+
+//   if (!file) return;
+
+//   const reader = new FileReader();
+//   reader.onload = (event) => {
+//     // ใช้ฟังก์ชัน resizeImage ที่คุณมีอยู่แล้ว เพื่อบีบอัดให้เหลือขนาดไม่เกิน 800px
+//     resizeImage(event.target.result, 400, 300, (resizedBase64) => {
+//       imageBase64 = resizedBase64;
+//       preview.src = resizedBase64;
+//       preview.classList.remove('hidden');
+//     });
+//   };
+//   reader.readAsDataURL(file);
+// });
 
 /* ================= NOTIFICATION ================= */
 async function loadNotifications() {
@@ -286,8 +313,12 @@ async function editVehicle(vid) {
   // 2. ดึงข้อมูล "ที่มีอยู่แล้วบนหน้าจอ" มาโชว์ก่อน
   // ค้นหา Card element ของรถคันนี้
   const card = document.getElementById(`card-${vid}`);
+  if (!card) {
+    alert('ไม่พบข้อมูลรถ');
+    return;
+  }
   const name = card.querySelector('.car-title').innerText;
-  const brandModel = card.querySelector('.car-subtitle').innerText; // เช่น (Toyota Corolla)
+  const brandModel = card.querySelector('.car-subtitle').innerText;
   const imgUrl = card.querySelector('.car-thumb img').src;
 
   // หยอดข้อมูลพื้นฐานลง Form ทันที
@@ -330,62 +361,8 @@ async function editVehicle(vid) {
     console.warn("Background fetch failed, but user can still edit basic info.");
   }
 }
-async function editVehicle1(vid) {
-  // 1. สั่งเด้งหน้าต่างขึ้นมาทันที (ไม่ต้องรอ API)
-  const s = document.getElementById('addSheet');
-  s.classList.remove('hidden');
-  requestAnimationFrame(() => s.classList.add('show'));
 
-  // 2. เปลี่ยนหัวข้อและแสดงสถานะว่ากำลังโหลดข้อมูลมาใส่
-  const headerSpan = document.querySelector('.sheet-header span');
-  if (headerSpan) headerSpan.innerText = "กำลังโหลดข้อมูล...";
-  
-  // ล้างค่าใน Form รอไว้ก่อน
-  document.getElementById('v_name').value = '...';
-  document.getElementById('v_brand').value = '...';
-
-  try {
-    // 3. ดึงข้อมูลจาก API (ยิงไปหา GAS)
-    const json = await apiFetch(`${GAS_URL}?action=vehicles&uid=${USER_ID}`);
-    const car = json.vehicles.find(v => v.vid === vid);
-    
-    if (!car) {
-        alert("ไม่พบข้อมูลรถ");
-        closeAddVehicle();
-        return;
-    }
-
-    // 4. ข้อมูลมาแล้ว หยอดลง Form ทันที
-    currentEditVid = vid;
-    document.getElementById('v_name').value = car.name || '';
-    document.getElementById('v_brand').value = car.brand || '';
-    document.getElementById('v_model').value = car.model || '';
-    document.getElementById('v_type').value = car.type ? car.type.toLowerCase() : 'fuel';
-    document.getElementById('v_odometer').value = car.initial_odo || 0;
-    
-    // จัดการรูปภาพ Preview
-    const preview = document.getElementById('imagePreview');
-    if (car.imgId) {
-      preview.src = `https://drive.google.com/thumbnail?id=${car.imgId}&sz=w400`;
-      preview.classList.remove('hidden');
-    }
-
-    // 5. ปรับ Header และปุ่มให้พร้อมสำหรับการกด Save
-    if (headerSpan) headerSpan.innerText = "แก้ไขข้อมูลรถ";
-    const btn = document.querySelector('.sheet-body button:last-child');
-    if (btn) {
-      btn.innerText = "บันทึกการแก้ไข";
-      btn.onclick = () => submitVehicle('edit_vehicle');
-    }
-
-  } catch (err) {
-    console.error(err);
-    alert("โหลดข้อมูลผิดพลาด");
-    closeAddVehicle();
-  }
-}
-
-async function deleteVehicle(vid) {
+async function deleteVehicle(event, vid) {
   if (!confirm('ลบรถคันนี้?')) return;
   // 1. ค้นหา HTML Element ของ Card นี้
   // เราจะหาปุ่มที่ถูกกด แล้วไล่ขึ้นไปหาตัวที่เป็น .swipe-wrap

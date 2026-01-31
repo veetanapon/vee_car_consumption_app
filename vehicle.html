@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="th">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Vehicle Detail</title>
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+        /* ===== VEHICLE PAGE ONLY ===== */
+        body {
+            background: var(--bg-app);
+        }
+
+        /* Header */
+        .vehicle-header {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 30;
+            padding: calc(14px + env(safe-area-inset-top)) 16px 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: color-mix(in srgb, var(--bg-card) 90%, transparent);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .vh-left select {
+            background: var(--bg-soft);
+            border: none;
+            border-radius: 12px;
+            padding: 6px 10px;
+            color: var(--text-main);
+        }
+
+        .vh-right div {
+            background: none;
+            border: none;
+            font-size: 20px;
+            margin-left: 8px;
+            color: var(--text-main);
+        }
+
+        .back-btn {
+            position: fixed;
+            top: calc(60px + env(safe-area-inset-top));
+            left: 12px;
+            z-index: 31;
+            background: var(--bg-card);
+            border-radius: 12px;
+            padding: 6px 10px;
+            box-shadow: var(--shadow-sm);
+            border: none;
+            font-size: 18px;
+        }
+
+        /* Hero */
+        .vehicle-hero {
+            margin-top: 110px;
+            text-align: center;
+            padding: 0 16px;
+        }
+
+        .vehicle-hero img {
+            width: 100%;
+            max-width: 440px;
+            aspect-ratio: 16 / 9;
+            object-fit: cover;
+            border-radius: 20px;
+            background: var(--bg-soft);
+        }
+
+        .vehicle-title {
+            margin-top: 8px;
+            font-size: 13px;
+            color: var(--text-sub);
+        }
+
+        /* Summary Card */
+        .summary-card {
+            margin: 16px;
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .summary-top {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .summary-top span {
+            font-size: 11px;
+            color: var(--text-sub);
+        }
+
+        .summary-top strong {
+            display: block;
+            font-size: 18px;
+        }
+
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+        }
+
+        .mini-card {
+            padding: 12px;
+            border-radius: 14px;
+            background: var(--bg-soft);
+            font-size: 12px;
+        }
+
+        .mini-card strong {
+            display: block;
+            margin-top: 4px;
+            font-size: 14px;
+        }
+
+        /* Energy bar */
+        .energy-bar {
+            display: flex;
+            height: 12px;
+            border-radius: 999px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .bar {
+            font-size: 9px;
+            color: #fff;
+            text-align: center;
+            line-height: 12px;
+        }
+
+        .bar.ev {
+            background: #22d3ee;
+        }
+
+        .bar.fuel {
+            background: #f59e0b;
+        }
+
+        /* History */
+        .fuel-history {
+            margin: 16px;
+            padding: 16px;
+            background: var(--bg-card);
+            border-radius: 20px;
+            box-shadow: var(--shadow-sm);
+        }
+
+        .history-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 12px;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
+        .fuel-item {
+            font-size: 13px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--border-soft);
+        }
+
+        .fuel-item:last-child {
+            border-bottom: none;
+        }
+
+        .fab {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            width: 56px;
+            height: 56px;
+            border-radius: 50%;
+            background: #22c55e;
+            color: #fff;
+            font-size: 26px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 6px 16px rgba(0, 0, 0, .3);
+            cursor: pointer;
+            z-index: 50;
+        }
+
+        .bottom-sheet.show {
+            transform: translateY(0);
+        }
+
+        .bottom-sheet.hidden {
+            display: none;
+        }
+
+        .sheet-header {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 16px;
+            font-weight: bold;
+            border-bottom: 1px solid #eee;
+        }
+
+        .sheet-body {
+            padding: 16px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        /* etype / ftype */
+        #e_etype,
+        #e_ftype {
+            height: 44px;
+            font-size: 16px;
+            min-width: 90px;
+        }
+        /* unit label ให้เท่า input */
+        #e_unit_label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 44px;
+            min-width: 90px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        /* total price label */
+        #e_total_price_label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 44px;
+            min-width: 90px;
+            font-size: 16px;
+            font-weight: 600;
+            background: var(--bg-soft);
+            border-radius: 8px;
+        }
+
+        .sheet-body input,
+        .sheet-body select,
+        .sheet-body button {
+            padding: 10px;
+            font-size: 16px;
+        }
+        /* input height ให้เท่ากันหมด */
+        .sheet-body input,
+        .sheet-body select,
+        .sheet-body textarea {
+        height: 44px;
+        }
+        /* textarea ยืดเมื่อพิมพ์หลายบรรทัด */
+        .sheet-body textarea {
+        min-height: 44px;
+        height: auto;
+        resize: vertical;
+        }
+
+        /* loading button */
+        .sheet-body button:disabled {
+        opacity: 0.6;
+        }
+
+        .sheet-body .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            align-items: stretch;
+        }
+
+        .sheet-body .flex {
+            flex: 1;
+        }
+
+        .sheet-body .small {
+            width: 80px;
+        }
+
+        .unit-label {
+            padding: 8px;
+            background: var(--bg-soft);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+
+        /* FAB */
+        /* .fab {
+            position: fixed;
+            right: calc(20px + env(safe-area-inset-right));
+            bottom: calc(20px + env(safe-area-inset-bottom));
+            z-index: 50;
+        } */
+    </style>
+</head>
+
+<body>
+    <!-- Header -->
+    <header class="vehicle-header">
+        <div class="vh-left">
+            <!-- <select id="carDropdown" onchange="switchCar(this.value)"></select> -->
+            <select id="carDropdown"></select>
+        </div>
+        <div class="vh-right">
+            <!-- <div onclick="toggleTheme()">🌓</div>
+            <div onclick="loadNotifications()">🔔</div> -->
+            <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
+            <div class="noti" onclick="loadNotifications()">
+                🔔
+                <div id="badge" class="badge" style="display:none">0</div>
+            </div>
+        </div>
+    </header>
+
+    <button class="back-btn" onclick="history.back()">←</button>
+    <!-- Hero -->
+    <section class="vehicle-hero">
+        <img id="vehicleImage" />
+        <div class="vehicle-title" id="vehicleTitle"></div>
+    </section>
+
+    <!-- Summary -->
+    <section class="summary-card">
+        <div class="summary-top">
+            <div>
+                <span>ไมล์ปัจจุบัน</span>
+                <strong id="lastOdo">-</strong>
+            </div>
+            <div>
+                <span>ค่าใช้จ่ายรวม</span>
+                <strong id="totalCost" style="text-align: right;">-</strong>
+            </div>
+        </div>
+
+        <div class="summary-grid">
+            <div class="mini-card">
+                ระยะทางรวม
+                <strong id="totalDistance">-</strong>
+            </div>
+            <div class="mini-card">
+                เติม / ชาร์จ
+                <strong id="energyCount">-</strong>
+            </div>
+            <div class="mini-card">
+                บาท / กม.
+                <strong id="avgCost">-</strong>
+            </div>
+            <div class="mini-card">
+                อัตราสิ้นเปลือง
+                <strong id="efficiency">-</strong>
+            </div>
+        </div>
+        <div class="energy-bar" id="energyBar"></div>
+    </section>
+
+    <!-- History -->
+    <section class="fuel-history">
+        <div class="history-header">
+            <span>ประวัติการเติมพลังงาน</span>
+            <button>📅</button>
+        </div>
+        <div id="fuelList"></div>
+    </section>
+
+    <!-- FAB -->
+    <button class="fab" onclick="openEnergySheet(CURRENT_VEHICLE_TYPE)">+</button>
+    <!-- Bottom Sheet -->
+    <div id="energySheet" class="sheet hidden">
+        <div class="sheet-header">
+            <span>บันทึกการเติมพลังงาน</span>
+            <button onclick="closeEnergySheet()">&times;</button>
+        </div>
+
+        <div class="sheet-body">
+            <!-- แถวที่ 1: สถานี + ประเภท -->
+            <div class="row">
+                <select id="e_station_name" class="flex"></select>
+                <input id="e_type" value="fuel" hidden /> <!-- // vehicle type fuel/ev -->
+                <select id="e_etype" class="small">
+                    <option value="dc">DC</option>
+                    <option value="ac">AC</option>
+                </select>
+
+                <select id="e_ftype" class="small">
+                    <option value="g95">G95</option>
+                    <option value="g91">G91</option>
+                    <option value="e20">E20</option>
+                    <option value="gpremium">G95 Premium/G97</option>
+                    <option value="e85">E85</option>
+                    <option value="bensine">เบนซิน</option>
+                </select>
+            </div>
+
+            <!-- เลขไมล์ -->
+            <input id="e_odometer" type="number" placeholder="เลขไมล์ปัจจุบัน" />
+
+            <!-- แถวที่ 2: ปริมาณ + หน่วย -->
+            <div class="row">
+                <input id="e_qty" type="number" placeholder="ปริมาณ" />
+                <span id="e_unit_label" class="unit-label">Liter</span>
+            </div>
+
+            <!-- แถวที่ 3: ราคา -->
+            <div class="row">
+                <input id="e_price_per_unit" type="number" placeholder="ราคาต่อหน่วย" />
+                <!-- <span class="unit-label">=</span> -->
+                <span id="e_total_price_label">0.00 ฿</span>
+            </div>
+
+            <!-- วันที่ -->
+            <input id="e_date" type="datetime-local" />
+
+            <!-- หมายเหตุ -->
+            <textarea id="e_notes" rows="2" placeholder="หมายเหตุ (กด Enter เพื่อขึ้นบรรทัดใหม่)"></textarea>
+
+            <button onclick="submitEnergy()">บันทึก</button>
+        </div>
+    </div>
+
+    <script src="js/config.js"></script>
+    <script src="js/auth.js"></script> <!-- shared -->
+    <script src="js/app.js"></script> <!-- shared -->
+    <script src="js/vehicle.js"></script> <!-- vehicle only -->
+
+</body>
+
+</html>
