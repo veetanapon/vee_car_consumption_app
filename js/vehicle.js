@@ -92,7 +92,8 @@ async function loadVehicleDetail(vid) {
 
   const distance = summary.last_odometer - vehicle.initial_odo;
   totalDistance.innerText = distance + " km";
-  energyCount.innerText = logs.length;
+//   energyCount.innerText = s.length;
+  energyCount.innerText = (summary.sum_qty).toFixed(2) + " " + (vehicle.type === "EV" ? "kWh" : "Liter");
   avgCost.innerText =
     distance > 0 ? (summary.total_cost / distance).toFixed(2) + " ฿" : "-";
 
@@ -155,7 +156,7 @@ function applyEnergyTypeUI(type) {
   if (type === "ev") {
     etype.style.display = "block";
     ftype.style.display = "none";
-    unitLabel.innerText = "kWhr";
+    unitLabel.innerText = "kWh";
     eTypeInput.value = "ev";
   } else {
     etype.style.display = "none";
@@ -194,13 +195,13 @@ async function submitEnergy() {
     uid: USER_ID,
     vid: new URLSearchParams(location.search).get("vid"),
     energy_type: e_type.value,
-    fuel_type: e_ftype.value,
-    charge_type: e_etype.value,
+    fuel_type: e_type.value==='ev'?'':e_ftype.value,
+    charge_type: e_type.value==='ev'?e_etype.value:'',
     odometer_km: Number(e_odometer.value),
     quantity: Number(e_qty.value),
     unit: e_unit_label.innerText,
     price_per_unit: Number(e_price_per_unit.value),
-    total_price: e_total_price_label.innerText,
+    total_price: Number(e_total_price_label.innerText.replace(" ฿", "")),
     isFull: false,//e_isfull.checked,
     station_name: e_station_name.value,
     note: e_notes.value,
@@ -226,7 +227,7 @@ async function submitEnergy() {
       body: JSON.stringify(payload),
     });
 
-    if (!res || res.status !== "success") {
+    if (!res || res.status !== "ok") {
       throw new Error("API error");
     }
 
