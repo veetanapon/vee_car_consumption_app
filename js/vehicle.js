@@ -24,13 +24,13 @@ async function initVehiclePage() {
   const vid = new URLSearchParams(location.search).get("vid");
   if (!vid) return;
 
-  const json = await apiFetch(`${GAS_URL}?action=vehicles&uid=${USER_ID}`);
-  if (!json?.vehicles) return;
+  // const json = await apiFetch(`${GAS_URL}?action=vehicles`);
+  // if (!json?.vehicles) return;
 
   const dropdown = document.getElementById("carDropdown");
   dropdown.innerHTML = "";
-
-  json.vehicles.forEach((v) => {
+  allVehicles = getSession("vehicles");
+  allVehicles.forEach((v) => {
     const opt = document.createElement("option");
     opt.value = v.vid;
     opt.textContent = v.name;
@@ -71,17 +71,22 @@ function renderEnergyBar(logs) {
   });
 }
 
-//document.addEventListener('DOMContentLoaded', initVehiclePage);
 async function loadVehicleDetail(vid) {
-  const res = await apiFetch(`
-    ${GAS_URL}?action=vehicle_detail_full&vid=${vid}`
-  );
-  if (!res) return;
-  const { vehicle, summary, logs } = res;
-  
+  payload = {
+    action: "getVehicleFullDetail",
+    session_token: getSession(),
+    vid: vid,
+  };
+  const json = await apiFetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+  if (!json) return;
+  const { vehicle, summary, logs, energyBar } = json;
+  //console.log(logs);
+
   CURRENT_VEHICLE_TYPE = vehicle.type === "EV" ? "ev" : "fuel";
   CURRENT_SUMMARY = summary;
-  
   vehicleImage.src = vehicle.imgId
     ? `https://drive.google.com/thumbnail?id=${vehicle.imgId}&sz=w800`
     : "";
@@ -92,17 +97,51 @@ async function loadVehicleDetail(vid) {
 
   const distance = summary.last_odometer - vehicle.initial_odo;
   totalDistance.innerText = distance + " km";
-//   energyCount.innerText = s.length;
-  energyCount.innerText = (summary.sum_qty).toFixed(2) + " " + (vehicle.type === "EV" ? "kWh" : "Liter");
+  //   energyCount.innerText = s.length;
+  energyCount.innerText =
+    summary.sum_qty.toFixed(2) +
+    " " +
+    (vehicle.type === "EV" ? "kWh" : "Liter");
   avgCost.innerText =
     distance > 0 ? (summary.total_cost / distance).toFixed(2) + " ฿" : "-";
+  efficiency.innerText =
+    summary.sum_qty > 0
+      ? vehicle.type === "EV"
+        ? (distance / summary.sum_qty).toFixed(2) + " km/kWh"
+        : (distance / summary.sum_qty).toFixed(2) + " km/L"
+      : "-";
+  fuelList.innerHTML = logs.slice(0, 5).map((l) => {
+    const subtype = ((l.sub_type || '').length <= 3 ? l.sub_type : 'g97').toLowerCase();
+    const iconText = subtype.toUpperCase();
+    const unitLabel = l.unit || '';
+    return `
+      <div class="fuel-row fuel-${subtype}">
+      <!-- LEFT -->
+      <div class="fuel-icon">
+        ${iconText}
+      </div>
 
-  fuelList.innerHTML = logs.slice(0, 5).map((l) => `
-    <div class="fuel-item">
-      ${l.type} • ${l.amount} ${l.unit} • ฿${l.cost}
+      <!-- CENTER -->
+      <div class="fuel-info">
+        <div class="fuel-station">${l.station || '-'}</div>
+        <div class="fuel-meta">
+          ${new Date(l.date).toLocaleDateString("th-TH", {
+            day: "numeric",
+            month: "short",
+            year: "numeric"
+          })} • ${l.amount} ${unitLabel}
+        </div>
+      </div>
+
+      <!-- RIGHT -->
+      <div class="fuel-price">
+        <div class="fuel-total">${l.cost.toFixed(2)} ฿</div>
+        <div class="fuel-unit">${l.price_per_unit.toFixed(2)} ฿/Liter</div>
+      </div>
     </div>
-  `,).join("");
-
+  `;
+  }).join("");
+    
   renderEnergyBar(logs);
 }
 
@@ -117,11 +156,11 @@ function openEnergySheet(type) {
     applyEnergyTypeUI(type);
     autoSetDate();
   });
-//   applyEnergyTypeUI(type);
-//   autoSetDate();
+  //   applyEnergyTypeUI(type);
+  //   autoSetDate();
 
-//   sheet.classList.remove("hidden");
-//   requestAnimationFrame(() => sheet.classList.add("show"));
+  //   sheet.classList.remove("hidden");
+  //   requestAnimationFrame(() => sheet.classList.add("show"));
 }
 
 function closeEnergySheet() {
@@ -147,7 +186,7 @@ function applyEnergyTypeUI(type) {
   if (!etype || !ftype || !unitLabel || !station || !eTypeInput) return;
   station.innerHTML = `<option value="">เลือกสถานี</option>`;
   const list = type === "ev" ? EV_STATIONS_TH : FUEL_STATIONS_TH;
-  list.forEach(name => {
+  list.forEach((name) => {
     const opt = document.createElement("option");
     opt.value = name;
     opt.textContent = name;
@@ -171,7 +210,10 @@ function calcTotal() {
   const price = Number(document.getElementById("e_price_per_unit")?.value || 0);
   const total = qty * price;
   const label = document.getElementById("e_total_price_label");
-  if (label) label.innerText = total.toFixed(2) + " ฿";
+  if (label) {
+    // label.inn = total.toFixed(2) + " ฿";
+    label.value = total.toFixed(2);
+  }
 }
 
 /* ===== วันที่ปัจจุบัน ===== */
@@ -192,17 +234,17 @@ async function submitEnergy() {
 
   const payload = {
     action: "add_energy_log",
-    uid: USER_ID,
+    // uid: USER_ID,
     vid: new URLSearchParams(location.search).get("vid"),
     energy_type: e_type.value,
-    fuel_type: e_type.value==='ev'?'':e_ftype.value,
-    charge_type: e_type.value==='ev'?e_etype.value:'',
+    fuel_type: e_type.value === "ev" ? "" : e_ftype.value,
+    charge_type: e_type.value === "ev" ? e_etype.value : "",
     odometer_km: Number(e_odometer.value),
     quantity: Number(e_qty.value),
     unit: e_unit_label.innerText,
     price_per_unit: Number(e_price_per_unit.value),
-    total_price: Number(e_total_price_label.innerText.replace(" ฿", "")),
-    isFull: false,//e_isfull.checked,
+    total_price: Number(e_total_price_label.value), //.replace(" ฿", "")),
+    isFull: false, //e_isfull.checked,
     station_name: e_station_name.value,
     note: e_notes.value,
     logged_at: e_date.value,
@@ -277,19 +319,21 @@ function resetEnergyForm() {
   e_odometer.value = "";
   e_qty.value = "";
   e_price_per_unit.value = "";
-  e_total_price_label.innerText = "0.00 ฿";
+  e_total_price_label.value = "";
   e_notes.value = "";
   autoSetDate();
 }
 
-
 document.addEventListener("DOMContentLoaded", async () => {
   const ok = await ensureAuth?.();
-  if (!ok) return;
-
+  if (!ok) {
+    console.log("Not authenticated", ok);
+    location.href = "login.html";
+    return;
+  }
   initVehiclePage();
 
-  ["e_qty", "e_price_per_unit"].forEach(id => {
+  ["e_qty", "e_price_per_unit"].forEach((id) => {
     document.getElementById(id)?.addEventListener("input", calcTotal);
   });
 });

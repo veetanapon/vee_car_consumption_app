@@ -4,20 +4,71 @@ let currentEditVid = null;
 
 /* ================= API ================= */
 async function apiFetch(url, options = {}) {
+  await ensureAuth(); // เช็คว่ามี session_token ไหม / หมดอายุรึยัง
+  const sessionToken = sessionStorage.getItem('session_token');
+
+  // clone options กัน side effect
+  const opts = Object.assign({}, options);
+  opts.method = opts.method || 'POST';
+
+  // --- แนบ session_token แบบปลอด CORS ---
+  let body = {};
+  if (opts.body) {
+    try {
+      body = typeof opts.body === 'string'
+        ? JSON.parse(opts.body)
+        : opts.body;
+    } catch (e) {
+      body = {};
+    }
+  }
+  opts.body = JSON.stringify({
+    session_token: sessionToken,
+    ...body
+  });
+
   try {
     const res = await fetch(url, options);
     const json = await res.json();
 
-    if (json && json.status === 'session_expired') {
-      window.location.href = `${GAS_URL}?action=auth&uid=${USER_ID}`;
+    // --- session หมดอายุ ---
+    if (json?.code === 'SESSION_EXPIRED' || json?.status === 'session_expired') {
+      const refreshed = await silentRefreshSession();
+
+      if (refreshed) {
+        // 🔁 retry ครั้งเดียว
+        return apiFetch(url, options);
+      }
+
+      // refresh ไม่ผ่าน → ไป login
+      redirectToLogin();
       return null;
     }
+
     return json;
+
   } catch (err) {
-    console.error("Fetch error:", err);
-    // กรณีที่ fetch พังเพราะ CORS หรือ Network
-    return { status: 'error', message: err.message };
+    console.error('Fetch error:', err);
+
+    return {
+      status: 'error',
+      message: err.message || 'network_error'
+    };
   }
+  // try {
+  //   const res = await fetch(url, options);
+  //   const json = await res.json();
+
+  //   if (json && json.status === 'session_expired') {
+  //     window.location.href = `${GAS_URL}?action=auth&uid=${USER_ID}`;
+  //     return null;
+  //   }
+  //   return json;
+  // } catch (err) {
+  //   console.error("Fetch error:", err);
+  //   // กรณีที่ fetch พังเพราะ CORS หรือ Network
+  //   return { status: 'error', message: err.message };
+  // }
 }
 
 async function loadCars() {
@@ -26,14 +77,23 @@ async function loadCars() {
   // 1. โชว์ Skeleton
   if (list.innerHTML.trim() === "") renderSkeleton(3);
 
+  payload = {
+    action: 'getAllVehicles',
+    session_token: getSession()
+  };
   // 2. ดึงข้อมูลครั้งเดียว (Single API Call)
-  const json = await apiFetch(`${GAS_URL}?action=vehicles&uid=${USER_ID}`);
+  //const json = await apiFetch(`${GAS_URL}?action=vehicles`);
+  const json = await apiFetch(GAS_URL, {
+    method: 'POST',
+    body: JSON.stringify(payload)
+  });
   if (!json || !Array.isArray(json.vehicles)) {
     list.innerHTML = '<p>ไม่พบข้อมูลรถ</p>';
     return;
   }
   // 3. สร้าง HTML ของ Card ทั้งหมดในลูปเดียว
   let allCardsHTML = "";
+  sessionStorage.setItem('vehicles', JSON.stringify(json.vehicles)); // เก็บสำรองไว้ใช้ที่อื่นได้
   json.vehicles.forEach(v => {
     const img = v.imgId 
       ? `https://drive.google.com/thumbnail?id=${v.imgId}&sz=w400` 
@@ -133,7 +193,7 @@ async function submitVehicle(mode = 'add_vehicle') {
 
   const data = {
     action: mode,
-    uid: USER_ID,
+    // uid: USER_ID,
     vid: currentEditVid, // จะเป็น NULL ถ้าเป็น add_vehicle
     name: v_name.value.trim(),
     brand: v_brand.value.trim(),
@@ -239,7 +299,7 @@ if (vehicleInput) { // ตรวจสอบก่อนว่ามีไหม
 /* ================= NOTIFICATION ================= */
 async function loadNotifications() {
   const json = await apiFetch(
-    `${GAS_URL}?action=notifications&uid=${USER_ID}`
+    `${GAS_URL}?action=notifications`
   );
   if (!json) return;
   alert(json.notifications.map(n => n[4] + '\n' + n[5]).join('\n\n'));
@@ -295,12 +355,15 @@ document.addEventListener('touchend', e => {
     diff < -60 ? 'translateX(-128px)' : 'translateX(0)';
 });
 
-// init
-applyTheme(localStorage.getItem('theme') || 'light');
 /* ================= INIT ================= */
+applyTheme(localStorage.getItem('theme') || 'light');
 (async () => {
   const ok = await ensureAuth();
-  if (!ok) return;
+  if (!ok) {
+    console.log("Not authenticated", ok);
+    location.href = 'login.html';
+    return;
+  }
   loadCars();
 })();
 
@@ -344,7 +407,7 @@ async function editVehicle(vid) {
 
   // 3. (Background) ค่อยไปโหลดข้อมูลเชิงลึกจาก Server มาทับ
   try {
-    const json = await apiFetch(`${GAS_URL}?action=vehicles&uid=${USER_ID}`);
+    const json = await apiFetch(`${GAS_URL}?action=vehicles`);
     const fullData = json.vehicles.find(v => v.vid === vid);
     
     if (fullData) {
@@ -384,7 +447,7 @@ async function deleteVehicle(event, vid) {
   // 3. ส่งข้อมูลไปบอก Server เบื้องหลัง
   const data = {
     action: 'delete_vehicle',
-    uid: USER_ID,
+    // uid: USER_ID,
     vid: vid
   };
 

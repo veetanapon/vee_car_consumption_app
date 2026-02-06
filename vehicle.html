@@ -12,22 +12,6 @@
             background: var(--bg-app);
         }
 
-        /* Header */
-        .vehicle-header {
-            position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            z-index: 30;
-            padding: calc(14px + env(safe-area-inset-top)) 16px 12px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            background: color-mix(in srgb, var(--bg-card) 90%, transparent);
-            backdrop-filter: blur(14px);
-            border-bottom: 1px solid var(--border-soft);
-        }
-
         .vh-left select {
             background: var(--bg-soft);
             border: none;
@@ -45,10 +29,13 @@
         }
 
         .back-btn {
-            position: fixed;
-            top: calc(60px + env(safe-area-inset-top));
-            left: 12px;
-            z-index: 31;
+            position: sticky;
+            top: calc(env(safe-area-inset-top) + 56px);
+            /* ต่ำกว่า header */
+            margin-left: 12px;
+            margin-top: 8px;
+            z-index: 25;
+
             background: var(--bg-card);
             border-radius: 12px;
             padding: 6px 10px;
@@ -59,29 +46,46 @@
 
         /* Hero */
         .vehicle-hero {
-            margin-top: 110px;
-            text-align: center;
+            margin-top: 8px;
+            /* ไม่ต้อง 110px แล้ว */
             padding: 0 16px;
+            text-align: center;
         }
 
-        .vehicle-hero img {
+        .vehicle-image-frame {
             width: 100%;
             max-width: 440px;
-            aspect-ratio: 16 / 9;
-            object-fit: cover;
+            height: 220px;
+            /* คุมความสูง */
+            margin: 0 auto;
             border-radius: 20px;
             background: var(--bg-soft);
+            overflow: hidden;
+            /* ตัดหัว–ท้าย */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .vehicle-image-frame img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            /* ไม่บีบ */
+            object-position: center;
+            object-fit: cover;
+            object-position: center 55%;
         }
 
         .vehicle-title {
-            margin-top: 8px;
+            margin-bottom: 8px;
             font-size: 13px;
             color: var(--text-sub);
         }
 
         /* Summary Card */
         .summary-card {
-            margin: 16px;
+            margin: 8px 16px;
             padding: 16px;
             background: var(--bg-card);
             border-radius: 20px;
@@ -149,7 +153,7 @@
 
         /* History */
         .fuel-history {
-            margin: 16px;
+            margin: 16px 16px 48px 16px;
             padding: 16px;
             background: var(--bg-card);
             border-radius: 20px;
@@ -222,29 +226,6 @@
             font-size: 16px;
             min-width: 90px;
         }
-        /* unit label ให้เท่า input */
-        #e_unit_label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 44px;
-            min-width: 90px;
-            font-size: 15px;
-            font-weight: 500;
-        }
-
-        /* total price label */
-        #e_total_price_label {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            height: 44px;
-            min-width: 90px;
-            font-size: 16px;
-            font-weight: 600;
-            background: var(--bg-soft);
-            border-radius: 8px;
-        }
 
         .sheet-body input,
         .sheet-body select,
@@ -252,22 +233,24 @@
             padding: 10px;
             font-size: 16px;
         }
+
         /* input height ให้เท่ากันหมด */
         .sheet-body input,
         .sheet-body select,
         .sheet-body textarea {
-        height: 44px;
+            height: 44px;
         }
+
         /* textarea ยืดเมื่อพิมพ์หลายบรรทัด */
         .sheet-body textarea {
-        min-height: 44px;
-        height: auto;
-        resize: vertical;
+            min-height: 44px;
+            height: auto;
+            resize: vertical;
         }
 
         /* loading button */
         .sheet-body button:disabled {
-        opacity: 0.6;
+            opacity: 0.6;
         }
 
         .sheet-body .row {
@@ -292,27 +275,123 @@
             font-size: 14px;
         }
 
-        /* FAB */
-        /* .fab {
-            position: fixed;
-            right: calc(20px + env(safe-area-inset-right));
-            bottom: calc(20px + env(safe-area-inset-bottom));
-            z-index: 50;
-        } */
+        /* unit label ให้เท่า input */
+        #e_unit_label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 44px;
+            min-width: 90px;
+            font-size: 15px;
+            font-weight: 500;
+        }
+
+        .sheet-body #e_total_price_label {
+            width: 90px !important;
+            text-align: center;
+        }
+
+        /* record container */
+        .fuel-row {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px;
+            margin-bottom: 10px;
+            background: var(--bg-soft);
+            border-radius: 16px;
+        }
+
+        /* icon */
+        .fuel-icon {
+            box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.4);
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+
+        /* info */
+        .fuel-info {
+            flex: 1;
+        }
+
+        .fuel-station {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .fuel-meta {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        /* price */
+        .fuel-price {
+            text-align: right;
+        }
+
+        .fuel-total {
+            font-size: 15px;
+            font-weight: 700;
+        }
+
+        .fuel-unit {
+            font-size: 12px;
+            color: var(--text-sub);
+        }
+
+        .fuel-e20 .fuel-icon {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+
+        .fuel-e85 .fuel-icon {
+            background: #fde68a;
+            color: #92400e;
+        }
+
+        .fuel-g95 .fuel-icon {
+            background: #cffafe;
+            color: #0e7490;
+        }
+
+        .fuel-g91 .fuel-icon {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .fuel-g97 .fuel-icon {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        .fuel-dc .fuel-icon {
+            background: #e0f2fe;
+            color: #0369a1;
+        }
+
+        .fuel-ac .fuel-icon {
+            background: #f1f5f9;
+            color: #334155;
+        }
     </style>
 </head>
 
 <body>
     <!-- Header -->
-    <header class="vehicle-header">
+    <header class="container">
+        <!-- <h1>My Cars</h1> -->
         <div class="vh-left">
-            <!-- <select id="carDropdown" onchange="switchCar(this.value)"></select> -->
             <select id="carDropdown"></select>
         </div>
-        <div class="vh-right">
-            <!-- <div onclick="toggleTheme()">🌓</div>
-            <div onclick="loadNotifications()">🔔</div> -->
-            <div class="theme-toggle" onclick="toggleTheme()">🌓</div>
+        <div style="display:flex; gap:14px; align-items:center">
+            <!-- <div class="theme-toggle" onclick="toggleTheme()">🌓</div> -->
             <div class="noti" onclick="loadNotifications()">
                 🔔
                 <div id="badge" class="badge" style="display:none">0</div>
@@ -323,7 +402,9 @@
     <button class="back-btn" onclick="history.back()">←</button>
     <!-- Hero -->
     <section class="vehicle-hero">
-        <img id="vehicleImage" />
+        <div class="vehicle-image-frame">
+            <img id="vehicleImage" />
+        </div>
         <div class="vehicle-title" id="vehicleTitle"></div>
     </section>
 
@@ -412,7 +493,8 @@
             <div class="row">
                 <input id="e_price_per_unit" type="number" placeholder="ราคาต่อหน่วย" />
                 <!-- <span class="unit-label">=</span> -->
-                <span id="e_total_price_label">0.00 ฿</span>
+                <input id="e_total_price_label" type="number" placeholder="เป็นเงิน" />
+                <!-- <span id="e_total_price_label">0.00 ฿</span> -->
             </div>
 
             <!-- วันที่ -->
