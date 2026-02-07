@@ -1,6 +1,38 @@
 /* ================= GLOBAL ================= */
 let imageBase64 = null;
 let currentEditVid = null;
+const MONTHS_TH = [
+  "มกราคม","กุมภาพันธ์","มีนาคม","เมษายน","พฤษภาคม","มิถุนายน",
+  "กรกฎาคม","สิงหาคม","กันยายน","ตุลาคม","พฤศจิกายน","ธันวาคม"
+];
+function buildWheel(el, values, defaultIndex = 0) {
+  el.innerHTML = "";
+  values.forEach((v, i) => {
+    const div = document.createElement("div");
+    div.className = "wheel-item";
+    div.innerText = v;
+    el.appendChild(div);
+  });
+
+  el.scrollTop = defaultIndex * 40;
+  updateActive(el);
+
+  el.addEventListener("scroll", () => {
+    clearTimeout(el._t);
+    el._t = setTimeout(() => updateActive(el), 80);
+  });
+}
+
+function updateActive(el) {
+  const index = Math.round(el.scrollTop / 40);
+  [...el.children].forEach((c, i) =>
+    c.classList.toggle("active", i === index)
+  );
+}
+
+function getWheelValue(el) {
+  return Math.round(el.scrollTop / 40);
+}
 
 /* ================= API ================= */
 async function apiFetch(url, options = {}) {

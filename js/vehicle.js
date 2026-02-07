@@ -3,6 +3,10 @@ let CURRENT_VEHICLE_TYPE = "fuel";
 let CURRENT_SUMMARY = null;
 let ENERGY_SUBMITTING = false;
 let LAST_ENERGY_HASH = null;
+let CURRENT_VID = null;
+let ALL_LOGS = [];
+const ITEM_HEIGHT = 36;
+const OFFSET_INDEX = 1; // ⭐ item กลาง
 
 const FUEL_STATIONS_TH = ["PTT", "Bangchak", "Shell", "Caltex", "PT", "Susco"];
 const EV_STATIONS_TH = [
@@ -47,31 +51,25 @@ function switchCar(vid) {
   window.location.href = `vehicle.html?vid=${vid}`;
 }
 
-function renderEnergyBar(logs) {
+function renderEnergyBar(energyData) {
   const bar = document.getElementById("energyBar");
-  if (!bar || !logs?.length) return;
-
-  bar.innerHTML = "";
-
-  const map = {};
-  logs.forEach((l) => {
-    const key = l.sub_type || l.type;
-    map[key] = (map[key] || 0) + Number(l.amount);
-  });
-
-  const total = Object.values(map).reduce((a, b) => a + b, 0);
-  if (!total) return;
-
-  Object.entries(map).forEach(([k, v]) => {
-    const div = document.createElement("div");
-    div.className = `bar ${k.toLowerCase()}`;
-    div.style.width = `${(v / total) * 100}%`;
-    div.textContent = Math.round((v / total) * 100) + "%";
-    bar.appendChild(div);
-  });
+  if (!energyData || energyData.length === 0) {
+    bar.innerHTML = "";
+    return;
+  }
+  bar.innerHTML = energyData
+    .map((r) => {
+      return `
+        <div class="energy-seg fuel-${r.type}"
+             style="width:${r.percent}%"
+             title="${r.type.toUpperCase()} ${r.percent}%">
+        </div>`;
+    })
+    .join("");
 }
 
 async function loadVehicleDetail(vid) {
+  CURRENT_VID = vid;
   payload = {
     action: "getVehicleFullDetail",
     session_token: getSession(),
@@ -81,9 +79,10 @@ async function loadVehicleDetail(vid) {
     method: "POST",
     body: JSON.stringify(payload),
   });
+  //console.log(json);
   if (!json) return;
   const { vehicle, summary, logs, energyBar } = json;
-  //console.log(logs);
+  // console.log(logs);
 
   CURRENT_VEHICLE_TYPE = vehicle.type === "EV" ? "ev" : "fuel";
   CURRENT_SUMMARY = summary;
@@ -97,7 +96,6 @@ async function loadVehicleDetail(vid) {
 
   const distance = summary.last_odometer - vehicle.initial_odo;
   totalDistance.innerText = distance + " km";
-  //   energyCount.innerText = s.length;
   energyCount.innerText =
     summary.sum_qty.toFixed(2) +
     " " +
@@ -110,25 +108,34 @@ async function loadVehicleDetail(vid) {
         ? (distance / summary.sum_qty).toFixed(2) + " km/kWh"
         : (distance / summary.sum_qty).toFixed(2) + " km/L"
       : "-";
-  fuelList.innerHTML = logs.slice(0, 5).map((l) => {
-    const subtype = ((l.sub_type || '').length <= 3 ? l.sub_type : 'g97').toLowerCase();
-    const iconText = subtype.toUpperCase();
-    const unitLabel = l.unit || '';
-    return `
+  logsCount.innerText = `(${logs.length || 0})`;
+  renderEnergyBar(energyBar);
+  renderFuelList(logs);
+  ALL_LOGS = logs;
+}
+
+function renderFuelList(logs) {
+  fuelList.innerHTML = logs
+    .slice(0, 5)
+    .map((l) => {
+      const subtype = (
+        (l.sub_type || "").length <= 3 ? l.sub_type : "g97"
+      ).toLowerCase();
+      const iconText = subtype.toUpperCase();
+      const unitLabel = l.unit || "";
+      return `
       <div class="fuel-row fuel-${subtype}">
       <!-- LEFT -->
-      <div class="fuel-icon">
-        ${iconText}
-      </div>
+      <div class="fuel-icon">${iconText}</div>
 
       <!-- CENTER -->
       <div class="fuel-info">
-        <div class="fuel-station">${l.station || '-'}</div>
+        <div class="fuel-station">${l.station || "Unknown"}</div>
         <div class="fuel-meta">
           ${new Date(l.date).toLocaleDateString("th-TH", {
             day: "numeric",
             month: "short",
-            year: "numeric"
+            year: "numeric",
           })} • ${l.amount} ${unitLabel}
         </div>
       </div>
@@ -140,9 +147,8 @@ async function loadVehicleDetail(vid) {
       </div>
     </div>
   `;
-  }).join("");
-    
-  renderEnergyBar(logs);
+    })
+    .join("");
 }
 
 //---------------------------- Energy FAB Sheet ---------------------------//
@@ -277,7 +283,7 @@ async function submitEnergy() {
     closeEnergySheet();
     loadVehicleDetail(payload.vid); // refresh summary
   } catch (err) {
-    console.error(err);
+    //console.error(err);
     alert("❌ บันทึกไม่สำเร็จ");
   } finally {
     btn.disabled = false;
@@ -327,7 +333,7 @@ function resetEnergyForm() {
 document.addEventListener("DOMContentLoaded", async () => {
   const ok = await ensureAuth?.();
   if (!ok) {
-    console.log("Not authenticated", ok);
+    //console.log("Not authenticated", ok);
     location.href = "login.html";
     return;
   }
@@ -337,3 +343,145 @@ document.addEventListener("DOMContentLoaded", async () => {
     document.getElementById(id)?.addEventListener("input", calcTotal);
   });
 });
+
+/* ================= Date Filter ================= */
+function getCenterItem(el) {
+  const centerY = el.scrollTop + el.clientHeight / 2;
+
+  let closest = null;
+  let min = Infinity;
+
+  [...el.children].forEach(item => {
+    const itemCenter =
+      item.offsetTop + item.offsetHeight / 2;
+
+    const dist = Math.abs(centerY - itemCenter);
+
+    if (dist < min) {
+      min = dist;
+      closest = item;
+    }
+  });
+
+  return closest;
+}
+function buildWheel(el, values, defaultIndex) {
+  el.innerHTML = "";
+
+  values.forEach((v) => {
+    const div = document.createElement("div");
+    div.className = "wheel-item";
+    div.innerText = v;
+    el.appendChild(div);
+  });
+
+  requestAnimationFrame(() => {
+    el.scrollTop = defaultIndex * ITEM_HEIGHT;
+    updateActive(el);
+  });
+
+  el.addEventListener("scroll", () => {
+  clearTimeout(el._t);
+  el._t = setTimeout(() => {
+    snap(el);
+    updateActive(el);
+  }, 80);
+});
+}
+function snapToItem(el) {
+  const index = Math.round((el.scrollTop - ITEM_HEIGHT) / ITEM_HEIGHT);
+  el.scrollTo({
+    top: index * ITEM_HEIGHT + ITEM_HEIGHT,
+    behavior: "smooth",
+  });
+  updateActive(el);
+}
+function updateActive(el) {
+  const activeItem = getCenterItem(el);
+
+  [...el.children].forEach(item =>
+    item.classList.toggle("active", item === activeItem)
+  );
+}
+function snap(el) {
+  const active = getCenterItem(el);
+  if (!active) return;
+
+  const top =
+    active.offsetTop -
+    (el.clientHeight / 2 - active.offsetHeight / 2);
+
+  el.scrollTo({
+    top,
+    behavior: "smooth"
+  });
+}
+function getWheelIndex(el) {
+  return Math.round(el.scrollTop / ITEM_HEIGHT);
+}
+
+function openDateFilter() {
+  const now = new Date();
+  const currentMonth = now.getMonth(); // 0-11
+  const currentYear = now.getFullYear();
+
+  const years = [];
+  for (let y = currentYear - 10; y <= currentYear + 1; y++) {
+    years.push(y);
+  }
+
+  buildWheel(document.getElementById("fromMonth"), MONTHS_TH, currentMonth);
+  buildWheel(document.getElementById("fromYear"), years, years.indexOf(currentYear));
+
+  buildWheel(document.getElementById("toMonth"), MONTHS_TH, currentMonth);
+  buildWheel(document.getElementById("toYear"), years, years.indexOf(currentYear));
+
+  document.getElementById("dateFilterModal").classList.add("show");
+  //document.getElementById("dateFilterModal").classList.remove("hidden");
+}
+
+function closeDateFilter() {
+  document.getElementById("dateFilterModal").classList.remove("show");
+}
+
+async function applyDateFilter() {
+  const fm = getWheelIndex(document.getElementById("fromMonth")) + 1;
+  const fy = parseInt(
+    document.getElementById("fromYear")
+      .children[getWheelIndex(document.getElementById("fromYear"))].innerText
+  );
+
+  const tm = getWheelIndex(document.getElementById("toMonth")) + 1;
+  const ty = parseInt(
+    document.getElementById("toYear")
+      .children[getWheelIndex(document.getElementById("toYear"))].innerText
+  );
+
+  closeDateFilter();
+
+  reloadVehicleDetailWithFilter(fy, fm, ty, tm);
+}
+
+async function reloadVehicleDetailWithFilter(fy, fm, ty, tm) {
+  const payload = {
+    action: "getVehicleFullDetail",
+    session_token: getSession(),
+    vid: CURRENT_VID,
+    from_year: fy,
+    from_month: fm,
+    to_year: ty,
+    to_month: tm,
+  };
+
+  const json = await apiFetch(GAS_URL, {
+    method: "POST",
+    body: JSON.stringify(payload),
+  });
+
+  if (!json) return;
+  //console.log(json);
+
+  logsCount.innerText = `(${json.logs?.length || 0})`;
+  renderFuelList(json.logs);
+  //renderEnergyBar(json.energyBar);
+}

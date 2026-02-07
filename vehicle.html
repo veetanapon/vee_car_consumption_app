@@ -130,27 +130,21 @@
         /* Energy bar */
         .energy-bar {
             display: flex;
-            height: 12px;
+            height: 8px;
             border-radius: 999px;
             overflow: hidden;
-            margin-top: 8px;
+            margin-top: 12px;
+            background: var(--bg-soft);
         }
 
-        .bar {
+        .energy-seg {
+            height: 100%;
             font-size: 9px;
-            color: #fff;
+            line-height: 14px;
             text-align: center;
-            line-height: 12px;
+            color: #fff;
+            white-space: nowrap;
         }
-
-        .bar.ev {
-            background: #22d3ee;
-        }
-
-        .bar.fuel {
-            background: #f59e0b;
-        }
-
         /* History */
         .fuel-history {
             margin: 16px 16px 48px 16px;
@@ -346,37 +340,45 @@
             color: var(--text-sub);
         }
 
-        .fuel-e20 .fuel-icon {
+        .fuel-e85 .fuel-icon,
+        .energy-seg.fuel-e85 {
             background: #fee2e2;
             color: #b91c1c;
         }
 
-        .fuel-e85 .fuel-icon {
-            background: #fde68a;
+        .fuel-e20 .fuel-icon,
+        .energy-seg.fuel-e20 {
+            background: #fdcb8a;
             color: #92400e;
         }
 
-        .fuel-g95 .fuel-icon {
+        .fuel-g95 .fuel-icon,
+        .energy-seg.fuel-g95 {
             background: #cffafe;
             color: #0e7490;
         }
 
-        .fuel-g91 .fuel-icon {
+        .fuel-g91 .fuel-icon,
+        .energy-seg.fuel-g91 {
             background: #dcfce7;
             color: #166534;
         }
 
-        .fuel-g97 .fuel-icon {
-            background: #ede9fe;
-            color: #5b21b6;
+        .fuel-g97 .fuel-icon,
+        .energy-seg.fuel-g97,
+        .energy-seg.fuel-gpremium {
+            background: #5b21b6;
+            color: #fefde9;
         }
 
-        .fuel-dc .fuel-icon {
+        .fuel-dc .fuel-icon,
+        .energy-seg.fuel-dc {
             background: #e0f2fe;
             color: #0369a1;
         }
 
-        .fuel-ac .fuel-icon {
+        .fuel-ac .fuel-icon,
+        .energy-seg.fuel-ac {
             background: #f1f5f9;
             color: #334155;
         }
@@ -445,12 +447,42 @@
     <!-- History -->
     <section class="fuel-history">
         <div class="history-header">
-            <span>ประวัติการเติมพลังงาน</span>
-            <button>📅</button>
+            <span>ประวัติการเติมพลังงาน <span id="logsCount"></span></span>
+            <button onclick="openDateFilter()">📅</button>
         </div>
         <div id="fuelList"></div>
     </section>
 
+    <!-- Date Filter Sheet -->
+    <div id="dateFilterModal" class="date-filter">
+        <div class="filter-box" onclick="event.stopPropagation()">
+
+            <div class="filter-title">เลือกช่วงเดือน</div>
+
+            <!-- FROM -->
+            <div class="picker-section">
+                <div class="picker-label">จาก</div>
+                <div class="picker">
+                    <div class="wheel" id="fromMonth"></div>
+                    <div class="wheel" id="fromYear"></div>
+                </div>
+            </div>
+
+            <!-- TO -->
+            <div class="picker-section">
+                <div class="picker-label">ถึง</div>
+                <div class="picker">
+                    <div class="wheel" id="toMonth"></div>
+                    <div class="wheel" id="toYear"></div>
+                </div>
+            </div>
+
+            <div class="filter-actions">
+                <button class="cancel" onclick="closeDateFilter()">ยกเลิก</button>
+                <button class="apply" onclick="applyDateFilter()">ตกลง</button>
+            </div>
+        </div>
+    </div>
     <!-- FAB -->
     <button class="fab" onclick="openEnergySheet(CURRENT_VEHICLE_TYPE)">+</button>
     <!-- Bottom Sheet -->
